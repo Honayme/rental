@@ -17,6 +17,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private static final String[] WHITE_LIST_SWAGGER_URL = {
+            "/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/swagger-ui/index.html",
+            "/swagger-ui/index.html/**"
+    };
+
     private final JwtService jwtService;
     private CustomUserDetailsService customUserDetailsService = null;
 
@@ -33,6 +42,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
