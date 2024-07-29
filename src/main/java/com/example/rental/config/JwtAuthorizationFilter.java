@@ -20,9 +20,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     private final CustomUserDetailsService customUserDetailsService;
 
     public JwtAuthorizationFilter(JwtService jwtService, CustomUserDetailsService customUserDetailsService) {
-        super(authenticationManager -> {
-            return authenticationManager;
-        });
+        super(authenticationManager -> authenticationManager);
         this.jwtService = jwtService;
         this.customUserDetailsService = customUserDetailsService;
     }
