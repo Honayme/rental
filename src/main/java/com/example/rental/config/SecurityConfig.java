@@ -49,7 +49,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable()) // Désactive la protection CSRF car on utilise des tokens JWT
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Activer CORS avec les configurations définies
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll() // Autoriser les requêtes vers les endpoints d'authentification sans authentification
+                        .requestMatchers("/api/auth/**").permitAll() // Autoriser les requêtes vers les endpoints d'authentification sans authentification
                         .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll() // Autoriser l'accès aux endpoints de Swagger sans authentification
                         .anyRequest().authenticated() // Toute autre requête nécessite une authentification
                 )

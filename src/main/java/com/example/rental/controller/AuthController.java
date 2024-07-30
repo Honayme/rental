@@ -22,11 +22,12 @@ public class AuthController {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
         // Validate request
         if (userRequest.getName() == null || userRequest.getEmail() == null || userRequest.getPassword() == null) {
-            return ResponseEntity.badRequest().body("{\"message\": \"Name, email, and password are required\"}");
+            return ResponseEntity.badRequest().body("{\"error\": \"Invalid input\"}");
         }
 
         // Create user
