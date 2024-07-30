@@ -8,8 +8,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.List;
+import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/rentals")
@@ -18,10 +25,31 @@ public class RentalController {
 
     private final RentalService rentalService;
     private final UserService userService;
+    private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads";
 
-    @PostMapping
-    public Rental createRental(@RequestBody Rental rental, @AuthenticationPrincipal UserDetails userDetails) {
+
+    @PostMapping(consumes = "multipart/form-data")
+    public Rental createRental(@RequestParam("name") String name,
+                               @RequestParam("surface") double surface,
+                               @RequestParam("price") double price,
+                               @RequestParam("description") String description,
+                               @RequestPart("picture") MultipartFile file,
+                               @AuthenticationPrincipal UserDetails userDetails) {
         UserEntity owner = userService.getCurrentUser(userDetails.getUsername());
+
+        // Vous pouvez traiter le fichier ici, par exemple, en enregistrant l'image et en obtenant son URL
+        // Enregistrez l'image et obtenez son URL
+        String pictureUrl = saveFile(file);
+
+        // Créez une nouvelle location
+        Rental rental = new Rental();
+        rental.setName(name);
+        rental.setSurface(surface);
+        rental.setPrice(price);
+        rental.setDescription(description);
+        rental.setPicture(pictureUrl);
+        rental.setOwner(owner);
+
         return rentalService.createRental(rental, owner);
     }
 
@@ -35,9 +63,60 @@ public class RentalController {
         return rentalService.getRentalById(id);
     }
 
-    @PutMapping("/{id}")
-    public Rental updateRental(@PathVariable Long id, @RequestBody Rental updatedRental, @AuthenticationPrincipal UserDetails userDetails) {
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public Rental updateRental(@PathVariable Long id,
+                               @RequestParam("name") String name,
+                               @RequestParam("surface") double surface,
+                               @RequestParam("price") double price,
+                               @RequestParam("description") String description,
+                               @RequestPart(value = "picture", required = false) MultipartFile file,
+                               @AuthenticationPrincipal UserDetails userDetails) {
         UserEntity owner = userService.getCurrentUser(userDetails.getUsername());
-        return rentalService.updateRental(id, updatedRental, owner);
+
+        // Récupérez la location existante
+        Rental rental = rentalService.getRentalById(id);
+        if (rental == null || !rental.getOwner().equals(owner)) {
+            throw new RuntimeException("Rental not found or you are not the owner");
+        }
+
+        // Mettez à jour les champs de la location
+        rental.setName(name);
+        rental.setSurface(surface);
+        rental.setPrice(price);
+        rental.setDescription(description);
+
+        // Mettez à jour l'image si un nouveau fichier est fourni
+        if (file != null && !file.isEmpty()) {
+            String pictureUrl = saveFile(file);
+            rental.setPicture(pictureUrl);
+        }
+
+        return rentalService.updateRental(id, rental, owner);
+    }
+
+
+    // Méthode pour enregistrer le fichier
+    private String saveFile(MultipartFile file) {
+        try {
+            // Créez le répertoire de téléchargement s'il n'existe pas
+            File uploadDir = new File(UPLOAD_DIR);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+
+            // Créez un nom de fichier unique pour éviter les conflits
+            String originalFilename = file.getOriginalFilename();
+            String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
+
+            // Enregistrez le fichier sur le serveur
+            Path filePath = Paths.get(UPLOAD_DIR, uniqueFilename);
+            Files.copy(file.getInputStream(), filePath);
+
+            // Retournez l'URL du fichier
+            return "http://localhost:8080/uploads/" + uniqueFilename;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save file", e);
+        }
     }
 }

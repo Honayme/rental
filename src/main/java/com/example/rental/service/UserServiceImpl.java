@@ -47,4 +47,9 @@ public class UserServiceImpl implements UserService {
     public UserEntity getCurrentUser(String email) {
         return userRepository.findByEmail(email);
     }
+
+    @Override
+    public UserEntity getCurrentUserById(Long id) { // Implémentation de la nouvelle méthode
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+    }
 }

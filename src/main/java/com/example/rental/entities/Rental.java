@@ -16,6 +16,8 @@ public class Rental {
     private Double surface;
     private Double price;
     private String picture;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @ManyToOne
