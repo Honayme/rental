@@ -12,6 +12,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
 
 @Configuration
 @EnableWebSecurity
@@ -39,22 +46,22 @@ public class SecurityConfig {
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager(http), jwtService);
         jwtAuthenticationFilter.setFilterProcessesUrl("/api/auth/login");
 
-        http.csrf(csrf -> csrf.disable())
+        http.csrf(csrf -> csrf.disable()) // Désactive la protection CSRF car on utilise des tokens JWT
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Activer CORS avec les configurations définies
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/login").permitAll() // Autoriser les requêtes vers les endpoints d'authentification sans authentification
+                        .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll() // Autoriser l'accès aux endpoints de Swagger sans authentification
+                        .anyRequest().authenticated() // Toute autre requête nécessite une authentification
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Utiliser des sessions sans état car on utilise des tokens JWT
                 );
 
-        http.addFilter(jwtAuthenticationFilter);
-        http.addFilterBefore(new JwtAuthorizationFilter(jwtService, customUserDetailsService), JwtAuthenticationFilter.class);
+        http.addFilter(jwtAuthenticationFilter); // Ajouter le filtre d'authentification JWT
+        http.addFilterBefore(new JwtAuthorizationFilter(jwtService, customUserDetailsService), JwtAuthenticationFilter.class); // Ajouter le filtre d'autorisation JWT avant le filtre d'authentification JWT
 
         return http.build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -68,6 +75,18 @@ public class SecurityConfig {
 
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(customUserDetailsService).passwordEncoder(passwordEncoder());
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Autoriser les requêtes venant de localhost:4200
+        configuration.setAllowedMethods(Arrays.asList("GET","POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
 }

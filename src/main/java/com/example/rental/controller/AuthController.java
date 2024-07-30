@@ -1,12 +1,15 @@
 package com.example.rental.controller;
 
+import com.example.rental.dto.UserRequest;
 import com.example.rental.entities.UserEntity;
 import com.example.rental.service.JwtService;
 import com.example.rental.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,8 +23,31 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public UserEntity register(@RequestBody UserEntity user) {
-        return userService.register(user);
+    public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
+        // Validate request
+        if (userRequest.getName() == null || userRequest.getEmail() == null || userRequest.getPassword() == null) {
+            return ResponseEntity.badRequest().body("{\"message\": \"Name, email, and password are required\"}");
+        }
+
+        // Create user
+        UserEntity newUser = new UserEntity();
+        newUser.setName(userRequest.getName());
+        newUser.setEmail(userRequest.getEmail());
+        newUser.setPassword(userRequest.getPassword());
+
+        UserEntity registeredUser = userService.register(newUser);
+
+        // Authenticate to generate UserDetails
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(newUser.getEmail(), userRequest.getPassword())
+        );
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+        // Generate JWT token
+        String token = jwtService.generateToken(userDetails);
+
+        // Return token in response
+        return ResponseEntity.ok("{\"token\": \"" + token + "\"}");
     }
 
     @PostMapping("/login")
@@ -35,7 +61,10 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public UserEntity getCurrentUser(@RequestParam String email) {
-        return userService.getCurrentUser(email);
+    public UserEntity getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new RuntimeException("Unauthorized");
+        }
+        return userService.getCurrentUser(userDetails.getUsername());
     }
 }
