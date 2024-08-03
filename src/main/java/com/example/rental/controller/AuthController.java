@@ -13,6 +13,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+
 import java.util.Collections;
 
 @RestController
@@ -38,6 +40,9 @@ public class AuthController {
         newUser.setName(userRequest.getName());
         newUser.setEmail(userRequest.getEmail());
         newUser.setPassword(userRequest.getPassword());
+        Date now = new Date();
+        newUser.setCreatedAt(now);
+        newUser.setUpdatedAt(now);
 
         // Enregistre le nouvel utilisateur en appelant le service userService.register.
         UserEntity registeredUser = userService.register(newUser);
