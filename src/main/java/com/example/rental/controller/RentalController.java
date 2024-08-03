@@ -117,7 +117,7 @@ public class RentalController {
             Files.copy(file.getInputStream(), filePath);
 
             // Retournez l'URL du fichier
-            return "http://localhost:8080/uploads/" + uniqueFilename;
+            return "http://localhost:3001/uploads/" + uniqueFilename;
         } catch (IOException e) {
             throw new RuntimeException("Failed to save file", e);
         }

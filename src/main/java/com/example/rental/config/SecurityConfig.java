@@ -19,7 +19,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -34,7 +33,7 @@ public class SecurityConfig {
     };
 
     private final JwtService jwtService;
-    private CustomUserDetailsService customUserDetailsService = null;
+    private final CustomUserDetailsService customUserDetailsService;
 
     public SecurityConfig(JwtService jwtService, CustomUserDetailsService customUserDetailsService) {
         this.jwtService = jwtService;
@@ -60,7 +59,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // Permet l'accès aux URLs définies dans WHITE_LIST_SWAGGER_URL sans authentification.
                         .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll()
-                        // Nécessite une authentification pour toute autre requête.
+                        // Permet l'accès aux ressources statiques dans le répertoire uploads sans authentification.
+                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Configure la gestion de session pour utiliser une politique sans état (stateless) car on utilise des tokens JWT.
@@ -76,8 +76,6 @@ public class SecurityConfig {
         // Construit et retourne la chaîne de filtres de sécurité configurée.
         return http.build();
     }
-
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -97,12 +95,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Autoriser les requêtes venant de localhost:4200
-        configuration.setAllowedMethods(Arrays.asList("GET","POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 }
