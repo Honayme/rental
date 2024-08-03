@@ -1,5 +1,6 @@
 package com.example.rental.controller;
 
+import com.example.rental.dto.RentalRequest;
 import com.example.rental.entities.Rental;
 import com.example.rental.entities.UserEntity;
 import com.example.rental.service.RentalService;
@@ -54,9 +55,11 @@ public class RentalController {
     }
 
     @GetMapping
-    public List<Rental> getAllRentals() {
-        return rentalService.getAllRentals();
+    public RentalRequest getAllRentals() {
+        List<Rental> rentals = rentalService.getAllRentals();
+        return new RentalRequest(rentals);
     }
+
 
     @GetMapping("/{id}")
     public Rental getRentalById(@PathVariable Long id) {
