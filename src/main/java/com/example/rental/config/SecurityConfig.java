@@ -43,25 +43,41 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // Crée une instance de JwtAuthenticationFilter en passant l'AuthenticationManager et le JwtService.
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(authenticationManager(http), jwtService);
+        // Définit l'URL à traiter par le filtre d'authentification JWT.
         jwtAuthenticationFilter.setFilterProcessesUrl("/api/auth/login");
 
-        http.csrf(csrf -> csrf.disable()) // Désactive la protection CSRF car on utilise des tokens JWT
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Activer CORS avec les configurations définies
+        // Configure HttpSecurity pour désactiver la protection CSRF (car on utilise des tokens JWT pour la sécurité).
+        http.csrf(csrf -> csrf.disable())
+                // Active la configuration CORS avec la source définie.
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Configure les règles d'autorisation des requêtes HTTP.
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Autoriser les requêtes vers les endpoints d'authentification sans authentification
-                        .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll() // Autoriser l'accès aux endpoints de Swagger sans authentification
-                        .anyRequest().authenticated() // Toute autre requête nécessite une authentification
+                        // Permet l'accès à l'endpoint /api/auth/register sans authentification.
+                        .requestMatchers("/api/auth/register").permitAll()
+                        // Permet l'accès à tous les endpoints sous /api/auth/ sans authentification.
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // Permet l'accès aux URLs définies dans WHITE_LIST_SWAGGER_URL sans authentification.
+                        .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll()
+                        // Nécessite une authentification pour toute autre requête.
+                        .anyRequest().authenticated()
                 )
+                // Configure la gestion de session pour utiliser une politique sans état (stateless) car on utilise des tokens JWT.
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Utiliser des sessions sans état car on utilise des tokens JWT
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
-        http.addFilter(jwtAuthenticationFilter); // Ajouter le filtre d'authentification JWT
-        http.addFilterBefore(new JwtAuthorizationFilter(jwtService, customUserDetailsService), JwtAuthenticationFilter.class); // Ajouter le filtre d'autorisation JWT avant le filtre d'authentification JWT
+        // Ajoute le filtre d'authentification JWT à la chaîne de filtres de sécurité.
+        http.addFilter(jwtAuthenticationFilter);
+        // Ajoute le filtre d'autorisation JWT avant le filtre d'authentification JWT dans la chaîne de filtres.
+        http.addFilterBefore(new JwtAuthorizationFilter(jwtService, customUserDetailsService), JwtAuthenticationFilter.class);
 
+        // Construit et retourne la chaîne de filtres de sécurité configurée.
         return http.build();
     }
+
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

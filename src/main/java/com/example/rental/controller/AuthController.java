@@ -13,6 +13,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+
 @RestController
 @RequestMapping("api/auth")
 @RequiredArgsConstructor
@@ -25,31 +27,36 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
-        // Validate request
+        // Valide la requête en vérifiant que le nom, l'email et le mot de passe ne sont pas null.
         if (userRequest.getName() == null || userRequest.getEmail() == null || userRequest.getPassword() == null) {
+            // Retourne une réponse 400 Bad Request avec un message d'erreur si une validation échoue.
             return ResponseEntity.badRequest().body("{\"error\": \"Invalid input\"}");
         }
 
-        // Create user
+        // Crée un nouvel utilisateur en utilisant les informations fournies dans la requête.
         UserEntity newUser = new UserEntity();
         newUser.setName(userRequest.getName());
         newUser.setEmail(userRequest.getEmail());
         newUser.setPassword(userRequest.getPassword());
 
+        // Enregistre le nouvel utilisateur en appelant le service userService.register.
         UserEntity registeredUser = userService.register(newUser);
 
-        // Authenticate to generate UserDetails
+        // Authentifie l'utilisateur nouvellement enregistré pour générer les UserDetails nécessaires.
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(newUser.getEmail(), userRequest.getPassword())
         );
+        // Récupère les détails de l'utilisateur authentifié.
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        // Generate JWT token
+        // Génère un token JWT pour l'utilisateur authentifié.
         String token = jwtService.generateToken(userDetails);
 
-        // Return token in response
-        return ResponseEntity.ok("{\"token\": \"" + token + "\"}");
+        // Retourne une réponse 200 OK avec le token JWT au format JSON.
+        return ResponseEntity.ok(Collections.singletonMap("token", token));
     }
+
+
 
     @PostMapping("/login")
     public String login(@RequestParam String email, @RequestParam String password) {
