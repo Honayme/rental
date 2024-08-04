@@ -51,6 +51,7 @@ spring.datasource.password=yourpassword
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+server.port=3001
 ```
 
 ### Step 4: Build and Run the Application
@@ -67,7 +68,7 @@ mvn spring-boot:run
 Once the application is running, you can access the Swagger UI to explore the API documentation at:
 
 ```
-http://localhost:8080/swagger-ui.html
+http://localhost:3001/swagger-ui/index.html
 ```
 
 ## Security Configuration
