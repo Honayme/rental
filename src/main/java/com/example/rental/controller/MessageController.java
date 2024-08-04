@@ -1,6 +1,6 @@
 package com.example.rental.controller;
 
-import com.example.rental.dto.ApiResponse;
+import com.example.rental.dto.CustomApiResponse;
 import com.example.rental.dto.MessageRequest;
 import com.example.rental.entities.Message;
 import com.example.rental.entities.Rental;
@@ -29,7 +29,7 @@ public class MessageController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse> createMessage(@RequestBody MessageRequest messageRequest) {
+    public ResponseEntity<CustomApiResponse> createMessage(@RequestBody MessageRequest messageRequest) {
         logger.debug("Received message request: {}", messageRequest);
 
         Long userId = messageRequest.getUserId();
@@ -59,8 +59,8 @@ public class MessageController {
         message.setUser(user);
         messageService.createMessage(message, rental, user);
 
-        ApiResponse apiResponse = new ApiResponse("Message sent with success");
-        return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
+        CustomApiResponse customApiResponse = new CustomApiResponse("Message sent with success");
+        return new ResponseEntity<>(customApiResponse, HttpStatus.CREATED);
     }
 
 

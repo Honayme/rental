@@ -1,6 +1,6 @@
 package com.example.rental.controller;
 
-import com.example.rental.dto.ApiResponse;
+import com.example.rental.dto.CustomApiResponse;
 import com.example.rental.dto.RentalRequest;
 import com.example.rental.dto.RentalListResponse;
 import com.example.rental.entities.Rental;
@@ -38,12 +38,12 @@ public class RentalController {
     private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads";
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse> createRental(@RequestParam("name") String name,
-                                                    @RequestParam("surface") double surface,
-                                                    @RequestParam("price") double price,
-                                                    @RequestParam("description") String description,
-                                                    @RequestPart("picture") MultipartFile file,
-                                                    @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<CustomApiResponse> createRental(@RequestParam("name") String name,
+                                                          @RequestParam("surface") double surface,
+                                                          @RequestParam("price") double price,
+                                                          @RequestParam("description") String description,
+                                                          @RequestPart("picture") MultipartFile file,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
         UserEntity owner = userService.getCurrentUser(userDetails.getUsername());
 
         // Traitez le fichier et obtenez son URL
@@ -61,7 +61,7 @@ public class RentalController {
         rentalService.createRental(rental, owner);
 
         // Retourner un message de succès
-        ApiResponse response = new ApiResponse("Rental created!");
+        CustomApiResponse response = new CustomApiResponse("Rental created!");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -81,13 +81,13 @@ public class RentalController {
     }
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse> updateRental(@PathVariable Long id,
-                                               @RequestParam("name") String name,
-                                               @RequestParam("surface") double surface,
-                                               @RequestParam("price") double price,
-                                               @RequestParam("description") String description,
-                                               @RequestPart(value = "picture", required = false) MultipartFile file,
-                                               @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<CustomApiResponse> updateRental(@PathVariable Long id,
+                                                          @RequestParam("name") String name,
+                                                          @RequestParam("surface") double surface,
+                                                          @RequestParam("price") double price,
+                                                          @RequestParam("description") String description,
+                                                          @RequestPart(value = "picture", required = false) MultipartFile file,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
         UserEntity owner = userService.getCurrentUser(userDetails.getUsername());
 
         // Récupérez la location existante
@@ -109,7 +109,7 @@ public class RentalController {
         }
 
         rentalService.updateRental(id, rental, owner);
-        ApiResponse response = new ApiResponse("Rental updated!");
+        CustomApiResponse response = new CustomApiResponse("Rental updated!");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
