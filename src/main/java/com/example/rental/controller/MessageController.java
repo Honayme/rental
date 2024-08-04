@@ -1,5 +1,6 @@
 package com.example.rental.controller;
 
+import com.example.rental.dto.ApiResponse;
 import com.example.rental.dto.MessageRequest;
 import com.example.rental.entities.Message;
 import com.example.rental.entities.Rental;
@@ -7,6 +8,8 @@ import com.example.rental.entities.UserEntity;
 import com.example.rental.service.MessageService;
 import com.example.rental.service.RentalService;
 import com.example.rental.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +29,7 @@ public class MessageController {
     private final UserService userService;
 
     @PostMapping
-    public Message createMessage(@RequestBody MessageRequest messageRequest) {
+    public ResponseEntity<ApiResponse> createMessage(@RequestBody MessageRequest messageRequest) {
         logger.debug("Received message request: {}", messageRequest);
 
         Long userId = messageRequest.getUserId();
@@ -54,7 +57,10 @@ public class MessageController {
         message.setMessage(messageContent);
         message.setRental(rental);
         message.setUser(user);
-        return messageService.createMessage(message, rental, user);
+        messageService.createMessage(message, rental, user);
+
+        ApiResponse apiResponse = new ApiResponse("Message sent with success");
+        return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
     }
 
 

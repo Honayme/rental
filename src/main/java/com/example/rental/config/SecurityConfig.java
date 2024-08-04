@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers(WHITE_LIST_SWAGGER_URL).permitAll()
                         // Permet l'accès aux ressources statiques dans le répertoire uploads sans authentification.
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/messages/**").authenticated() // Nécessite une authentification pour les endpoints de l'API des messages
                         .anyRequest().authenticated()
                 )
                 // Configure la gestion de session pour utiliser une politique sans état (stateless) car on utilise des tokens JWT.

@@ -81,7 +81,7 @@ public class RentalController {
     }
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-    public ResponseEntity<Rental> updateRental(@PathVariable Long id,
+    public ResponseEntity<ApiResponse> updateRental(@PathVariable Long id,
                                                @RequestParam("name") String name,
                                                @RequestParam("surface") double surface,
                                                @RequestParam("price") double price,
@@ -108,8 +108,9 @@ public class RentalController {
             rental.setPicture(pictureUrl);
         }
 
-        Rental updatedRental = rentalService.updateRental(id, rental, owner);
-        return ResponseEntity.ok(updatedRental);
+        rentalService.updateRental(id, rental, owner);
+        ApiResponse response = new ApiResponse("Rental updated!");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     // Méthode pour enregistrer le fichier
