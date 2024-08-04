@@ -7,6 +7,11 @@ import com.example.rental.entities.Rental;
 import com.example.rental.entities.UserEntity;
 import com.example.rental.service.RentalService;
 import com.example.rental.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +42,13 @@ public class RentalController {
 
     private static final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads";
 
+    @Operation(summary = "Create a new rental")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Rental created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<CustomApiResponse> createRental(@RequestParam("name") String name,
                                                           @RequestParam("surface") double surface,
@@ -46,10 +58,8 @@ public class RentalController {
                                                           @AuthenticationPrincipal UserDetails userDetails) {
         UserEntity owner = userService.getCurrentUser(userDetails.getUsername());
 
-        // Traitez le fichier et obtenez son URL
         String pictureUrl = saveFile(file);
 
-        // Créez une nouvelle location
         Rental rental = new Rental();
         rental.setName(name);
         rental.setSurface(surface);
@@ -60,11 +70,16 @@ public class RentalController {
 
         rentalService.createRental(rental, owner);
 
-        // Retourner un message de succès
         CustomApiResponse response = new CustomApiResponse("Rental created!");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "Get all rentals")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rentals retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RentalListResponse.class)))
+    })
     @GetMapping
     public RentalListResponse getAllRentals() {
         List<Rental> rentals = rentalService.getAllRentals();
@@ -74,12 +89,27 @@ public class RentalController {
         return new RentalListResponse(rentalRequests);
     }
 
+    @Operation(summary = "Get rental by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rental retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = RentalRequest.class))),
+            @ApiResponse(responseCode = "404", description = "Rental not found", content = @Content)
+    })
     @GetMapping("/{id}")
     public RentalRequest getRentalById(@PathVariable Long id) {
         Rental rental = rentalService.getRentalById(id);
         return convertToDTO(rental);
     }
 
+    @Operation(summary = "Update a rental")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rental updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Rental not found or you are not the owner", content = @Content)
+    })
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
     public ResponseEntity<CustomApiResponse> updateRental(@PathVariable Long id,
                                                           @RequestParam("name") String name,
@@ -90,19 +120,16 @@ public class RentalController {
                                                           @AuthenticationPrincipal UserDetails userDetails) {
         UserEntity owner = userService.getCurrentUser(userDetails.getUsername());
 
-        // Récupérez la location existante
         Rental rental = rentalService.getRentalById(id);
         if (rental == null || !rental.getOwner().equals(owner)) {
             throw new RuntimeException("Rental not found or you are not the owner");
         }
 
-        // Mettez à jour les champs de la location
         rental.setName(name);
         rental.setSurface(surface);
         rental.setPrice(price);
         rental.setDescription(description);
 
-        // Mettez à jour l'image si un nouveau fichier est fourni
         if (file != null && !file.isEmpty()) {
             String pictureUrl = saveFile(file);
             rental.setPicture(pictureUrl);
@@ -113,25 +140,20 @@ public class RentalController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    // Méthode pour enregistrer le fichier
     private String saveFile(MultipartFile file) {
         try {
-            // Créez le répertoire de téléchargement s'il n'existe pas
             File uploadDir = new File(UPLOAD_DIR);
             if (!uploadDir.exists()) {
                 uploadDir.mkdirs();
             }
 
-            // Créez un nom de fichier unique pour éviter les conflits
             String originalFilename = file.getOriginalFilename();
             String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
 
-            // Enregistrez le fichier sur le serveur
             Path filePath = Paths.get(UPLOAD_DIR, uniqueFilename);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Retournez l'URL du fichier
             return "http://localhost:3001/uploads/" + uniqueFilename;
         } catch (IOException e) {
             throw new RuntimeException("Failed to save file", e);

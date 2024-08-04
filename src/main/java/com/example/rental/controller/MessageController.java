@@ -8,6 +8,11 @@ import com.example.rental.entities.UserEntity;
 import com.example.rental.service.MessageService;
 import com.example.rental.service.RentalService;
 import com.example.rental.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +33,13 @@ public class MessageController {
     private final RentalService rentalService;
     private final UserService userService;
 
+    @Operation(summary = "Create a new message")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Message created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CustomApiResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
+    })
     @PostMapping
     public ResponseEntity<CustomApiResponse> createMessage(@RequestBody MessageRequest messageRequest) {
         logger.debug("Received message request: {}", messageRequest);
@@ -63,7 +75,13 @@ public class MessageController {
         return new ResponseEntity<>(customApiResponse, HttpStatus.CREATED);
     }
 
-
+    @Operation(summary = "Get messages by rental ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Messages retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Message.class))),
+            @ApiResponse(responseCode = "404", description = "Rental not found", content = @Content)
+    })
     @GetMapping("/rental/{rentalId}")
     public List<Message> getMessagesByRentalId(@PathVariable Long rentalId) {
         return messageService.getMessagesByRentalId(rentalId);
