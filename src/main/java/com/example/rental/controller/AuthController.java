@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.Collections;
 
 @RestController
-@RequestMapping("api/auth")
+@RequestMapping("api")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -37,7 +37,7 @@ public class AuthController {
                             schema = @Schema(example = "{\"token\": \"jwt\"}"))),
             @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content)
     })
-    @PostMapping("/register")
+    @PostMapping("/auth/register")
     public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
         if (userRequest.getName() == null || userRequest.getEmail() == null || userRequest.getPassword() == null) {
             return ResponseEntity.badRequest().body("{\"error\": \"Invalid input\"}");
@@ -70,7 +70,7 @@ public class AuthController {
                             schema = @Schema(example = "{\"token\": \"jwt\"}"))),
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content)
     })
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public String login(@RequestParam String email, @RequestParam String password) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
@@ -87,11 +87,28 @@ public class AuthController {
                             schema = @Schema(implementation = UserEntity.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content)
     })
-    @GetMapping("/me")
+    @GetMapping("/auth/me")
     public UserEntity getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             throw new RuntimeException("Unauthorized");
         }
         return userService.getCurrentUser(userDetails.getUsername());
     }
+
+    @Operation(summary = "Get user by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = UserEntity.class))),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+    })
+    @GetMapping("/user/{id}")
+    public ResponseEntity<UserEntity> getUserById(@PathVariable Long id) {
+        UserEntity user = userService.getCurrentUserById(id);
+        if (user == null) {
+            return ResponseEntity.status(404).body(null);
+        }
+        return ResponseEntity.ok(user);
+    }
+
 }

@@ -62,6 +62,7 @@ public class SecurityConfig {
                         // Permet l'accès aux ressources statiques dans le répertoire uploads sans authentification.
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/messages/**").authenticated() // Nécessite une authentification pour les endpoints de l'API des messages
+                        .requestMatchers("/api/user/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 // Configure la gestion de session pour utiliser une politique sans état (stateless) car on utilise des tokens JWT.
