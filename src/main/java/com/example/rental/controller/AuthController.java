@@ -1,6 +1,7 @@
 package com.example.rental.controller;
 
 import com.example.rental.dto.UserRequest;
+import com.example.rental.dto.UserResponse;
 import com.example.rental.entities.UserEntity;
 import com.example.rental.service.JwtService;
 import com.example.rental.service.UserService;
@@ -18,6 +19,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Collections;
 
@@ -88,11 +91,12 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content)
     })
     @GetMapping("/auth/me")
-    public UserEntity getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+    public UserResponse getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails == null) {
             throw new RuntimeException("Unauthorized");
         }
-        return userService.getCurrentUser(userDetails.getUsername());
+        UserEntity userEntity = userService.getCurrentUser(userDetails.getUsername());
+        return convertToDTO(userEntity);
     }
 
     @Operation(summary = "Get user by ID")
@@ -103,12 +107,28 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
     @GetMapping("/user/{id}")
-    public ResponseEntity<UserEntity> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         UserEntity user = userService.getCurrentUserById(id);
         if (user == null) {
             return ResponseEntity.status(404).body(null);
         }
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(convertToDTO(user));
+    }
+
+    private UserResponse convertToDTO(UserEntity userEntity) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setId(userEntity.getId());
+        userResponse.setName(userEntity.getName());
+        userResponse.setEmail(userEntity.getEmail());
+        userResponse.setCreatedAt(convertToLocalDate(userEntity.getCreatedAt()));
+        userResponse.setUpdatedAt(convertToLocalDate(userEntity.getUpdatedAt()));
+        return userResponse;
+    }
+
+    private LocalDate convertToLocalDate(Date date) {
+        return date.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
     }
 
 }
